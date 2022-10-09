@@ -149,6 +149,29 @@ func createPollCmd(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 // endPollCmd is the handler for the end subcommand of the poll command
 func endPollCmd(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+
+	// Check if the user has a poll running in this guild.
+	poll, err := databasePollGetUser(i.Member.User.ID, i.GuildID)
+	if err != nil {
+		s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+			Content: ptr("You don't have a poll running in this server."),
+		})
+		return
+	}
+
+	// End the poll
+	endPoll(s, poll.ID)
+
+	// Update the interaction response to say that the poll was ended
+	s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+		Content: ptr("Poll ended."),
+	})
 }
 
 // endPoll removes the poll from the database and edits the message to show the results

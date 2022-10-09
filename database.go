@@ -318,6 +318,23 @@ func databasePollGetAll() <-chan dbPoll {
 	return ch
 }
 
+func databasePollGetUser(userId, guildId string) (dbPoll, error) {
+	// Find a poll ID
+	var pollId string
+	err := db.QueryRow(`SELECT id FROM polls WHERE guild = ? AND creator = ?`, guildId, userId).Scan(&pollId)
+	if err != nil {
+		return dbPoll{}, fmt.Errorf("error getting poll: %w", err)
+	}
+
+	// Get the poll
+	poll, err := databasePollGet(pollId)
+	if err != nil {
+		return dbPoll{}, fmt.Errorf("error getting poll: %w", err)
+	}
+
+	return poll, nil
+}
+
 // databasePollCheckUser checks if a user has already created a poll within a specified guild and returns true is they have.
 func databasePollCheckUser(userId, guildId string) bool {
 	var pollId string
